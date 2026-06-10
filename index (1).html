@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Certificado de Içamento</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#111;min-height:100vh}
+:root{--blue:#185FA5;--blue-lt:#E6F1FB;--green:#3B6D11;--green-lt:#EAF3DE;--red:#A32D2D;--red-lt:#FCEBEB;--border:#ddd;--radius:10px;--rsm:6px}
+.hdr{background:var(--blue);color:white;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.hdr h1{font-size:16px;font-weight:600}
+.hdr p{font-size:11px;opacity:.8}
+.steps{background:white;padding:10px 16px;display:flex;gap:6px;border-bottom:1px solid var(--border)}
+.sp{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 4px;border-radius:20px;font-size:12px;font-weight:500;background:#f5f5f5;color:#666;border:1px solid transparent}
+.sp.on{background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
+.sp.dn{background:var(--green-lt);color:var(--green)}
+.sn{width:18px;height:18px;border-radius:50%;background:currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sn span{color:white;font-size:10px;font-weight:700}
+.sec{display:none;padding:16px}
+.sec.on{display:block}
+.card{background:white;border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:12px}
+.ct{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.pslot{border:2px dashed var(--border);border-radius:var(--rsm);aspect-ratio:4/3;position:relative;overflow:hidden;background:#f9f9f9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.pslot.ok{border-style:solid;border-color:var(--green)}
+.pslot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+.pico{font-size:28px}
+.plbl{font-size:11px;color:#666;text-align:center;padding:0 6px;font-weight:500}
+.pchk{position:absolute;top:5px;right:5px;background:var(--green);color:white;width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:12px;z-index:2}
+.pslot.ok .pchk{display:flex}
+.pkb{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.55);color:white;font-size:9px;padding:2px 5px;border-radius:3px;display:none;z-index:2}
+.pslot.ok .pkb{display:block}
+.pbr{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+.sl{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 7px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.f{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.f label{font-size:12px;color:#666;font-weight:500}
+.f input,.f select,.f textarea{font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rsm);background:white;color:#111;width:100%;-webkit-appearance:none}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--blue)}
+.stbox{display:none;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--rsm);font-size:13px;margin-top:8px}
+.stbox.ld{display:flex;background:var(--blue-lt);color:var(--blue)}
+.stbox.ok{display:flex;background:var(--green-lt);color:var(--green)}
+.stbox.er{display:flex;background:var(--red-lt);color:var(--red)}
+.spin{width:16px;height:16px;border:2px solid #B5D4F4;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.etags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.etag{font-size:11px;padding:3px 8px;border-radius:20px;background:var(--green-lt);color:var(--green);border:1px solid #C0DD97}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:white;color:#111;margin-top:8px;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-blue{background:var(--blue);color:white;border-color:var(--blue)}
+.btn-green{background:var(--green);color:white;border-color:var(--green)}
+.btn-out{background:white;color:var(--blue);border-color:var(--blue)}
+.brow{display:flex;gap:8px;margin-top:12px}
+.brow .btn{flex:1;margin-top:0}
+.cert{background:white;border:2px solid var(--blue);border-radius:var(--radius);padding:18px;font-family:'Times New Roman',serif;color:#111}
+.c-hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid var(--blue);padding-bottom:10px;margin-bottom:12px}
+.c-logo{font-size:17px;font-weight:bold;color:var(--blue);letter-spacing:2px;font-family:Arial,sans-serif}
+.c-sub{font-size:9px;color:#555;text-transform:uppercase;font-family:Arial,sans-serif}
+.c-num-blk{font-size:10px;color:#555;text-align:right;font-family:Arial,sans-serif;line-height:1.6}
+.c-title{font-size:13px;font-weight:bold;text-align:center;text-transform:uppercase;color:var(--blue);margin-bottom:10px;font-family:Arial,sans-serif}
+.ctbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+.ctbl td{padding:4px 7px;border:.5px solid #ccc}
+.ctbl td:first-child{font-weight:bold;background:#f5f8fc;width:42%;color:var(--blue);font-family:Arial,sans-serif}
+.csec td{background:var(--blue)!important;color:white!important;font-size:10px;font-family:Arial,sans-serif;font-weight:bold}
+.wrow{display:flex;gap:6px;margin-bottom:8px}
+.wbox{flex:1;border:.5px solid #ccc;border-radius:3px;padding:5px;text-align:center}
+.wlbl{font-size:9px;color:#555;font-family:Arial,sans-serif}
+.wval{font-size:13px;font-weight:bold;color:var(--blue);font-family:Arial,sans-serif}
+.wunit{font-size:8px;color:#888;font-family:Arial,sans-serif}
+.c-ok{background:var(--green-lt);border:1px solid var(--green);border-radius:3px;padding:6px;text-align:center;font-size:12px;font-weight:bold;color:var(--green);margin-bottom:8px;font-family:Arial,sans-serif}
+.c-ph{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.phbox{border:.5px solid #ccc;border-radius:3px;overflow:hidden}
+.phbox img{width:100%;height:90px;object-fit:cover;display:block}
+.phnone{height:90px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;font-family:Arial,sans-serif}
+.phlbl{font-size:9px;color:#555;text-align:center;padding:3px;background:#f9f9f9;font-family:Arial,sans-serif}
+.c-ftr{display:flex;justify-content:space-between;align-items:flex-end;border-top:.5px solid #ccc;padding-top:10px;font-size:10px;color:#555;font-family:Arial,sans-serif}
+.c-sign{border-bottom:1px solid #333;width:140px;margin-bottom:3px;height:26px}
+.c-note{font-size:9px;color:#888;text-align:center;margin-top:6px;font-style:italic;font-family:Arial,sans-serif}
+@media print{body *{visibility:hidden}#cprint,#cprint *{visibility:visible}#cprint{position:fixed;top:0;left:0;width:100%;padding:10mm}.nopr{display:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="font-size:22px">🏗️</div>
+  <div><h1>Certificado de Içamento</h1><p>Cinta · Manilha · Cabo de aço</p></div>
+</div>
+
+<div class="steps">
+  <div class="sp on" id="sp1"><div class="sn"><span>1</span></div>Fotos</div>
+  <div class="sp" id="sp2"><div class="sn"><span>2</span></div>Dados</div>
+  <div class="sp" id="sp3"><div class="sn"><span>3</span></div>Certificado</div>
+</div>
+
+<div class="sec on" id="sec1">
+  <div class="card">
+    <div class="ct">📷 Fotos do equipamento <span class="badge">✨ Gemini lê automaticamente</span></div>
+    <div class="pgrid">
+      <div>
+        <div class="pslot" id="slot-et" onclick="document.getElementById('inp-et').click()">
+          <div class="pico">🏷️</div>
+          <div class="plbl">Etiqueta</div>
+          <img id="img-et" src="" alt=""/>
+          <div class="pchk">✓</div>
+          <div class="pkb" id="kb-et"></div>
+        </div>
+        <div class="pbr">
+          <button class="btn" style="margin-top:0;padding:7px 4px;font-size:11px" onclick="document.getElementById('cam-et').click()">📷 Câmera</button>
+          <button class="btn btn-blue" style="margin-top:0;padding:7px 4px;font-size:11px" onclick="document.getElementById('inp-et').click()">📁 Arquivo</button>
+        </div>
+      </div>
+      <div>
+        <div class="pslot" id="slot-ct" onclick="document.getElementById('inp-ct').click()">
+          <div class="pico">🟠</div>
+          <div class="plbl">Cinta completa</div>
+          <img id="img-ct" src="" alt=""/>
+          <div class="pchk">✓</div>
+          <div class="pkb" id="kb-ct"></div>
+        </div>
+        <div class="pbr">
+          <button class="btn" style="margin-top:0;padding:7px 4px;font-size:11px" onclick="document.getElementById('cam-ct').click()">📷 Câmera</button>
+          <button class="btn btn-blue" style="margin-top:0;padding:7px 4px;font-size:11px" onclick="document.getElementById('inp-ct').click()">📁 Arquivo</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="cam-et" accept="image/*" capture="environment" style="display:none"/>
+    <input type="file" id="inp-et" accept="image/*" style="display:none"/>
+    <input type="file" id="cam-ct" accept="image/*" capture="environment" style="display:none"/>
+    <input type="file" id="inp-ct" accept="image/*" style="display:none"/>
+
+    <div class="stbox" id="ai-st"></div>
+    <div class="etags" id="etags" style="display:none"></div>
+    <button class="btn btn-blue" id="btn-ai" style="display:none;margin-top:12px">✨ Ler etiqueta com IA</button>
+    <button class="btn btn-out" onclick="goTo(2)" style="margin-top:8px">Preencher manualmente →</button>
+  </div>
+</div>
+
+<div class="sec" id="sec2">
+  <div class="card">
+    <div class="ct">📋 Dados do equipamento</div>
+    <div class="sl">Identificação</div>
+    <div class="f"><label>Tipo de acessório</label>
+      <select id="f-tipo">
+        <option>Cinta têxtil plana</option><option>Cinta têxtil redonda</option>
+        <option>Manilha</option><option>Cabo de aço</option><option>Corrente</option><option>Outro</option>
+      </select>
+    </div>
+    <div class="fg">
+      <div class="f"><label>Nº série / ID</label><input id="f-serie" placeholder="CPQ1PBLC1008"/></div>
+      <div class="f"><label>Fabricante</label><input id="f-fab" placeholder="Trakkai"/></div>
+      <div class="f"><label>OP / Referência</label><input id="f-op" placeholder="OP 2359-A"/></div>
+      <div class="f"><label>Data de fabricação</label><input id="f-dtf" placeholder="16/07/2025"/></div>
+      <div class="f"><label>Largura / Diâmetro</label><input id="f-larg" placeholder="150mm"/></div>
+      <div class="f"><label>Comprimento</label><input id="f-comp" placeholder="8,00 metros"/></div>
+    </div>
+    <div class="f"><label>Norma / Material</label><input id="f-norma" placeholder="NBR 15637-1 Poliéster 3.300"/></div>
+    <div class="sl">Capacidade de carga (WLL)</div>
+    <div class="fg3">
+      <div class="f"><label>Vertical (kg)</label><input id="f-wv" placeholder="10.000"/></div>
+      <div class="f"><label>Força/Choker</label><input id="f-wf" placeholder="8.000"/></div>
+      <div class="f"><label>Cesto/Berço</label><input id="f-wc" placeholder="20.000"/></div>
+    </div>
+    <div class="sl">Inspeção</div>
+    <div class="fg">
+      <div class="f"><label>Data da inspeção</label><input type="date" id="f-di"/></div>
+      <div class="f"><label>Próxima inspeção</label><input type="date" id="f-dp"/></div>
+    </div>
+    <div class="f"><label>Responsável técnico</label><input id="f-resp" placeholder="Nome completo"/></div>
+    <div class="f"><label>Registro (CREA/CFT)</label><input id="f-reg" placeholder="CREA-CE 12345"/></div>
+    <div class="f"><label>Observações</label><textarea id="f-obs" rows="2" placeholder="Ex: Sem danos visíveis, costura íntegra, apto para uso"></textarea></div>
+    <div class="brow">
+      <button class="btn btn-out" onclick="goTo(1)">← Voltar</button>
+      <button class="btn btn-blue" onclick="genCert()">📄 Gerar certificado</button>
+    </div>
+  </div>
+</div>
+
+<div class="sec" id="sec3">
+  <div id="cprint">
+    <div class="cert" id="cert-box">
+      <div class="c-hdr">
+        <div><div class="c-logo">CERT-IÇAMENTO</div><div class="c-sub">Certificado de Inspeção de Acessório de Içamento</div></div>
+        <div class="c-num-blk"><div id="c-num">N° CRT-0001</div><div id="c-dt">Emitido em: —</div></div>
+      </div>
+      <div class="c-title">Certificado de Inspeção Visual e Funcional</div>
+      <table class="ctbl">
+        <tr class="csec"><td colspan="2">Identificação do equipamento</td></tr>
+        <tr><td>Tipo de acessório</td><td id="c-tipo">—</td></tr>
+        <tr><td>Número de série</td><td id="c-serie">—</td></tr>
+        <tr><td>Fabricante</td><td id="c-fab">—</td></tr>
+        <tr><td>OP / Referência</td><td id="c-op">—</td></tr>
+        <tr><td>Largura / Diâmetro</td><td id="c-larg">—</td></tr>
+        <tr><td>Comprimento</td><td id="c-comp">—</td></tr>
+        <tr><td>Data de fabricação</td><td id="c-dtf">—</td></tr>
+        <tr><td>Norma / Material</td><td id="c-norma">—</td></tr>
+      </table>
+      <div style="font-size:10px;font-weight:bold;color:#185FA5;margin-bottom:5px;font-family:Arial,sans-serif">CAPACIDADE DE CARGA (WLL)</div>
+      <div class="wrow">
+        <div class="wbox"><div class="wlbl">Vertical</div><div class="wval" id="c-wv">—</div><div class="wunit">kg</div></div>
+        <div class="wbox"><div class="wlbl">Força/Choker</div><div class="wval" id="c-wf">—</div><div class="wunit">kg</div></div>
+        <div class="wbox"><div class="wlbl">Cesto/Berço</div><div class="wval" id="c-wc">—</div><div class="wunit">kg</div></div>
+      </div>
+      <table class="ctbl">
+        <tr class="csec"><td colspan="2">Inspeção</td></tr>
+        <tr><td>Data da inspeção</td><td id="c-di">—</td></tr>
+        <tr><td>Próxima inspeção</td><td id="c-dp">—</td></tr>
+        <tr><td>Observações</td><td id="c-obs">—</td></tr>
+      </table>
+      <div class="c-ok">✔ APROVADO PARA USO</div>
+      <div style="font-size:10px;font-weight:bold;color:#185FA5;margin-bottom:5px;font-family:Arial,sans-serif">REGISTRO FOTOGRÁFICO</div>
+      <div class="c-ph">
+        <div class="phbox"><img id="c-fet" src="" alt="" style="display:none"/><div class="phnone" id="c-fet-no">Sem foto</div><div class="phlbl">🏷️ Etiqueta</div></div>
+        <div class="phbox"><img id="c-fct" src="" alt="" style="display:none"/><div class="phnone" id="c-fct-no">Sem foto</div><div class="phlbl">🟠 Equipamento</div></div>
+      </div>
+      <div class="c-ftr">
+        <div><div class="c-sign"></div><div id="c-resp" style="font-weight:bold">Responsável técnico</div><div id="c-reg" style="color:#888;font-size:9px;margin-top:2px"></div></div>
+        <div style="text-align:right"><div>Válido até</div><div id="c-valid" style="font-weight:bold;color:#185FA5;font-size:13px;margin-top:2px">—</div></div>
+      </div>
+      <div class="c-note">Emitido conforme NR-11 · NBR 15637-1 · NBR 13541</div>
+    </div>
+  </div>
+  <div class="brow nopr" style="margin-top:12px">
+    <button class="btn btn-out" onclick="goTo(2)">← Editar</button>
+    <button class="btn btn-green" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="btn" onclick="newCert()">＋ Novo</button>
+  </div>
+</div>
+
+<script>
+var photos = { et: null, ct: null };
+var certN = parseInt(localStorage.getItem('crt') || '1');
+
+function compress(file, cb) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height, mx = 1200;
+      if (w > mx || h > mx) {
+        if (w > h) { h = Math.round(h * mx / w); w = mx; }
+        else { w = Math.round(w * mx / h); h = mx; }
+      }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      var du = cv.toDataURL('image/jpeg', 0.82);
+      var kb = Math.round(du.split(',')[1].length * 0.75 / 1024);
+      cb({ dataUrl: du, base64: du.split(',')[1], mimeType: 'image/jpeg', kb: kb });
+    };
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+function handlePhoto(inp, type) {
+  var file = inp.files[0];
+  if (!file) return;
+  compress(file, function(res) {
+    photos[type] = res;
+    document.getElementById('img-' + type).src = res.dataUrl;
+    document.getElementById('slot-' + type).classList.add('ok');
+    document.getElementById('kb-' + type).textContent = res.kb + 'KB';
+    if (photos.et) document.getElementById('btn-ai').style.display = 'flex';
+  });
+}
+
+document.getElementById('cam-et').onchange = function() { handlePhoto(this, 'et'); };
+document.getElementById('inp-et').onchange = function() { handlePhoto(this, 'et'); };
+document.getElementById('cam-ct').onchange = function() { handlePhoto(this, 'ct'); };
+document.getElementById('inp-ct').onchange = function() { handlePhoto(this, 'ct'); };
+
+function setSt(t, h) {
+  var el = document.getElementById('ai-st');
+  el.className = 'stbox ' + (t || '');
+  el.innerHTML = h;
+  el.style.display = t ? '' : 'none';
+}
+
+document.getElementById('btn-ai').onclick = function() {
+  if (!photos.et) { alert('Adicione a foto da etiqueta primeiro.'); return; }
+  setSt('ld', '<div class="spin"></div> Gemini lendo a etiqueta...');
+  document.getElementById('btn-ai').disabled = true;
+  document.getElementById('etags').style.display = 'none';
+
+  var prompt = 'Você é especialista em içamento. Analise a etiqueta e retorne SOMENTE JSON válido sem markdown:\n{"tipo":"Cinta têxtil plana, Cinta têxtil redonda, Manilha, Cabo de aço ou Corrente","serie":"nº série","fabricante":"fabricante","op":"OP ou lote","largura":"largura ou diâmetro","comprimento":"comprimento","dt_fabricacao":"data fab","norma":"norma e material","wll_vertical":"WLL vertical kg","wll_forca":"WLL força/choker kg","wll_cesto":"WLL cesto/berço kg","id_inspecao":"código inspeção","empresa_inspecao":"empresa inspeção"}\nCampos não visíveis retornar string vazia. Cintas têm tabela WLL com ícones vertical/força/cesto.';
+
+  var body = {
+    contents: [{
+      parts: [
+        { inline_data: { mime_type: photos.et.mimeType, data: photos.et.base64 } },
+        { text: prompt }
+      ]
+    }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 800 }
+  };
+
+  fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var txt = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : '';
+    if (!txt) throw new Error('Resposta vazia da IA');
+    var p = JSON.parse(txt.replace(/```json|```/g, '').trim());
+    var sel = document.getElementById('f-tipo');
+    if (p.tipo) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].text.toLowerCase().indexOf(p.tipo.toLowerCase().split(' ')[0]) >= 0) {
+          sel.value = sel.options[i].text; break;
+        }
+      }
+    }
+    var mp = [['f-serie',p.serie],['f-fab',p.fabricante],['f-op',p.op],['f-dtf',p.dt_fabricacao],['f-larg',p.largura],['f-comp',p.comprimento],['f-norma',p.norma],['f-wv',p.wll_vertical],['f-wf',p.wll_forca],['f-wc',p.wll_cesto]];
+    mp.forEach(function(x) { if (x[1]) { var el = document.getElementById(x[0]); if (el) el.value = x[1]; } });
+    var obs = [p.id_inspecao ? 'ID: ' + p.id_inspecao : '', p.empresa_inspecao ? 'Empresa: ' + p.empresa_inspecao : ''].filter(Boolean).join(' | ');
+    if (obs) document.getElementById('f-obs').value = obs;
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('f-di').value = today;
+    var nx = new Date(); nx.setFullYear(nx.getFullYear() + 1);
+    document.getElementById('f-dp').value = nx.toISOString().split('T')[0];
+    var found = [p.tipo, p.fabricante, p.serie, p.wll_vertical ? 'WLL ' + p.wll_vertical + 'kg' : '', p.comprimento, p.norma].filter(Boolean);
+    if (found.length) {
+      document.getElementById('etags').innerHTML = found.map(function(f) { return '<span class="etag">' + f + '</span>'; }).join('');
+      document.getElementById('etags').style.display = 'flex';
+    }
+    setSt('ok', '✅ Etiqueta lida! Revise os dados.');
+    setTimeout(function() { goTo(2); }, 1400);
+  })
+  .catch(function(e) {
+    setSt('er', '❌ Erro: ' + e.message);
+  })
+  .finally(function() {
+    document.getElementById('btn-ai').disabled = false;
+  });
+};
+
+function goTo(n) {
+  document.querySelectorAll('.sec').forEach(function(s, i) { s.classList.toggle('on', i === n - 1); });
+  document.querySelectorAll('.sp').forEach(function(s, i) {
+    s.classList.remove('on', 'dn');
+    if (i < n - 1) s.classList.add('dn');
+    if (i === n - 1) s.classList.add('on');
+  });
+  window.scrollTo(0, 0);
+}
+
+function fd(v) {
+  if (!v) return '—';
+  if (v.indexOf('-') > 0) { var a = v.split('-'); return a[2] + '/' + a[1] + '/' + a[0]; }
+  return v;
+}
+
+function genCert() {
+  var n = String(certN).padStart(4, '0');
+  document.getElementById('c-num').textContent = 'N° CRT-' + n;
+  document.getElementById('c-dt').textContent = 'Emitido: ' + new Date().toLocaleDateString('pt-BR');
+  var mp = [['c-tipo','f-tipo'],['c-serie','f-serie'],['c-fab','f-fab'],['c-op','f-op'],['c-larg','f-larg'],['c-comp','f-comp'],['c-dtf','f-dtf'],['c-norma','f-norma'],['c-wv','f-wv'],['c-wf','f-wf'],['c-wc','f-wc'],['c-obs','f-obs']];
+  mp.forEach(function(x) { document.getElementById(x[0]).textContent = document.getElementById(x[1]).value || '—'; });
+  document.getElementById('c-di').textContent = fd(document.getElementById('f-di').value);
+  document.getElementById('c-dp').textContent = fd(document.getElementById('f-dp').value);
+  document.getElementById('c-valid').textContent = fd(document.getElementById('f-dp').value);
+  document.getElementById('c-resp').textContent = document.getElementById('f-resp').value || 'Responsável técnico';
+  document.getElementById('c-reg').textContent = document.getElementById('f-reg').value || '';
+  if (photos.et) { document.getElementById('c-fet').src = photos.et.dataUrl; document.getElementById('c-fet').style.display = 'block'; document.getElementById('c-fet-no').style.display = 'none'; }
+  if (photos.ct) { document.getElementById('c-fct').src = photos.ct.dataUrl; document.getElementById('c-fct').style.display = 'block'; document.getElementById('c-fct-no').style.display = 'none'; }
+  certN++;
+  localStorage.setItem('crt', certN);
+  goTo(3);
+}
+
+function newCert() {
+  photos = { et: null, ct: null };
+  ['et', 'ct'].forEach(function(t) {
+    document.getElementById('img-' + t).src = '';
+    document.getElementById('slot-' + t).classList.remove('ok');
+    document.getElementById('kb-' + t).textContent = '';
+    document.getElementById('inp-' + t).value = '';
+    document.getElementById('cam-' + t).value = '';
+  });
+  document.getElementById('btn-ai').style.display = 'none';
+  document.getElementById('etags').style.display = 'none';
+  setSt('', '');
+  ['f-serie','f-fab','f-op','f-dtf','f-larg','f-comp','f-norma','f-wv','f-wf','f-wc','f-di','f-dp','f-resp','f-reg','f-obs'].forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('f-tipo').selectedIndex = 0;
+  document.getElementById('c-fet').style.display = 'none';
+  document.getElementById('c-fct').style.display = 'none';
+  document.getElementById('c-fet-no').style.display = 'flex';
+  document.getElementById('c-fct-no').style.display = 'flex';
+  goTo(1);
+}
+</script>
+</body>
+</html>
