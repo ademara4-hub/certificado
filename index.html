@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#111;min-height:100vh}
-:root{--blue:#185FA5;--blue-lt:#E6F1FB;--green:#3B6D11;--green-lt:#EAF3DE;--red:#A32D2D;--red-lt:#FCEBEB;--border:#ddd;--radius:10px;--rsm:6px}
+:root{--blue:#185FA5;--blue-lt:#E6F1FB;--green:#3B6D11;--green-lt:#EAF3DE;--red:#A32D2D;--red-lt:#FCEBEB;--amber:#8A5A00;--amber-lt:#FFF4DC;--border:#ddd;--radius:10px;--rsm:6px}
 .hdr{background:var(--blue);color:white;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
 .hdr h1{font-size:16px;font-weight:600}
 .hdr p{font-size:11px;opacity:.8}
@@ -74,6 +74,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .wval{font-size:13px;font-weight:bold;color:var(--blue);font-family:Arial,sans-serif}
 .wunit{font-size:8px;color:#888;font-family:Arial,sans-serif}
 .c-ok{background:var(--green-lt);border:1px solid var(--green);border-radius:3px;padding:6px;text-align:center;font-size:12px;font-weight:bold;color:var(--green);margin-bottom:8px;font-family:Arial,sans-serif}
+.c-ok.warn{background:var(--amber-lt);border-color:var(--amber);color:var(--amber)}
+.c-ok.bad{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+.chk{border:1px solid var(--border);border-radius:var(--rsm);overflow:hidden}
+.chk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px}
+.chk-row:last-child{border-bottom:none}
+.chk-opts{display:flex;gap:4px;flex-shrink:0}
+.chk-opts label{font-size:11px;font-weight:600;padding:5px 8px;border-radius:14px;border:1px solid var(--border);cursor:pointer;color:#666}
+.chk-opts input{display:none}
+.chk-opts label:has(input:checked){color:white}
+.chk-opts label.o-ok:has(input:checked){background:var(--green);border-color:var(--green)}
+.chk-opts label.o-nok:has(input:checked){background:var(--red);border-color:var(--red)}
+.chk-opts label.o-na:has(input:checked){background:#777;border-color:#777}
+.req{color:var(--red)}
+.c-nok{color:var(--red);font-weight:bold}
 .c-ph{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .phbox{border:.5px solid #ccc;border-radius:3px;overflow:hidden}
 .phbox img{width:100%;height:90px;object-fit:cover;display:block}
@@ -153,7 +167,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </select>
     </div>
     <div class="fg">
-      <div class="f"><label>Nº série / ID</label><input id="f-serie" placeholder="CPQ1PBLC1008"/></div>
+      <div class="f"><label>Nº série / ID <span class="req">*</span></label><input id="f-serie" placeholder="CPQ1PBLC1008"/></div>
       <div class="f"><label>Fabricante</label><input id="f-fab" placeholder="Trakkai"/></div>
       <div class="f"><label>OP / Referência</label><input id="f-op" placeholder="OP 2359-A"/></div>
       <div class="f"><label>Data de fabricação</label><input id="f-dtf" placeholder="16/07/2025"/></div>
@@ -169,10 +183,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="sl">Inspeção</div>
     <div class="fg">
-      <div class="f"><label>Data da inspeção</label><input type="date" id="f-di"/></div>
+      <div class="f"><label>Data da inspeção <span class="req">*</span></label><input type="date" id="f-di"/></div>
       <div class="f"><label>Próxima inspeção</label><input type="date" id="f-dp"/></div>
     </div>
-    <div class="f"><label>Responsável técnico</label><input id="f-resp" placeholder="Nome completo"/></div>
+    <div class="f"><label>Checklist de inspeção <span class="req">*</span></label><div class="chk" id="chk"></div></div>
+    <div class="f"><label>Resultado <span class="req">*</span></label>
+      <select id="f-res">
+        <option value="">Selecione...</option>
+        <option value="ok">Aprovado para uso</option>
+        <option value="warn">Aprovado com restrições</option>
+        <option value="bad">Reprovado — retirar de uso</option>
+      </select>
+    </div>
+    <div class="stbox" id="val-st"></div>
+    <div class="f"><label>Responsável técnico <span class="req">*</span></label><input id="f-resp" placeholder="Nome completo"/></div>
     <div class="f"><label>Registro (CREA/CFT)</label><input id="f-reg" placeholder="CREA-CE 12345"/></div>
     <div class="f"><label>Observações</label><textarea id="f-obs" rows="2" placeholder="Ex: Sem danos visíveis, costura íntegra, apto para uso"></textarea></div>
     <div class="brow">
@@ -213,7 +237,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <tr><td>Próxima inspeção</td><td id="c-dp">—</td></tr>
         <tr><td>Observações</td><td id="c-obs">—</td></tr>
       </table>
-      <div class="c-ok">✔ APROVADO PARA USO</div>
+      <table class="ctbl" id="c-chk"></table>
+      <div class="c-ok" id="c-res">—</div>
       <div style="font-size:10px;font-weight:bold;color:#185FA5;margin-bottom:5px;font-family:Arial,sans-serif">REGISTRO FOTOGRÁFICO</div>
       <div class="c-ph">
         <div class="phbox"><img id="c-fet" src="" alt="" style="display:none"/><div class="phnone" id="c-fet-no">Sem foto</div><div class="phlbl">🏷️ Etiqueta</div></div>
@@ -236,6 +261,64 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 var photos = { et: null, ct: null };
 var certN = parseInt(localStorage.getItem('crt') || '1');
+var curNum = null; // número do certificado em edição; só muda em "Novo"
+
+var CHECKLIST = {
+  textil: ['Etiqueta presente e legível', 'Costuras íntegras', 'Sem cortes, rasgos ou furos', 'Sem abrasão ou desgaste excessivo', 'Sem danos por calor, químicos ou UV', 'Olhais / alças íntegros'],
+  manilha: ['Marcação de carga legível', 'Sem deformação ou abertura do corpo', 'Sem trincas, entalhes ou corrosão', 'Pino com rosca íntegra e travamento', 'Desgaste dentro do limite do fabricante'],
+  cabo: ['Identificação presente e legível', 'Sem fios rompidos acima do limite', 'Sem amassamento, dobras ou gaiola de passarinho', 'Sem corrosão ou falta de lubrificação', 'Terminais, laços e presilhas íntegros'],
+  corrente: ['Identificação presente e legível', 'Sem alongamento acima do limite', 'Elos sem desgaste, trincas ou deformação', 'Ganchos sem abertura e com trava funcionando', 'Elos de ligação e anéis íntegros'],
+  outro: ['Identificação presente e legível', 'Sem deformações ou trincas', 'Sem desgaste ou corrosão excessivos', 'Componentes e travas funcionando']
+};
+
+function chkKey() {
+  var t = document.getElementById('f-tipo').value;
+  if (t.indexOf('Cinta') === 0) return 'textil';
+  if (t === 'Manilha') return 'manilha';
+  if (t === 'Cabo de aço') return 'cabo';
+  if (t === 'Corrente') return 'corrente';
+  return 'outro';
+}
+
+function buildChecklist() {
+  var box = document.getElementById('chk');
+  box.innerHTML = '';
+  CHECKLIST[chkKey()].forEach(function(item, i) {
+    var row = document.createElement('div');
+    row.className = 'chk-row';
+    var lbl = document.createElement('span');
+    lbl.textContent = item;
+    var opts = document.createElement('div');
+    opts.className = 'chk-opts';
+    [['ok', 'OK'], ['nok', 'NOK'], ['na', 'N/A']].forEach(function(o) {
+      var l = document.createElement('label');
+      l.className = 'o-' + o[0];
+      l.innerHTML = '<input type="radio" name="chk' + i + '" value="' + o[0] + '"/>' + o[1];
+      opts.appendChild(l);
+    });
+    row.appendChild(lbl);
+    row.appendChild(opts);
+    box.appendChild(row);
+  });
+}
+
+function checklistValues() {
+  return CHECKLIST[chkKey()].map(function(item, i) {
+    var sel = document.querySelector('input[name="chk' + i + '"]:checked');
+    return { item: item, val: sel ? sel.value : null };
+  });
+}
+
+document.getElementById('f-tipo').onchange = buildChecklist;
+
+function setDefaultDates() {
+  var di = document.getElementById('f-di'), dp = document.getElementById('f-dp');
+  if (!di.value) di.value = new Date().toISOString().split('T')[0];
+  if (!dp.value) {
+    var nx = new Date(di.value + 'T12:00:00'); nx.setFullYear(nx.getFullYear() + 1);
+    dp.value = nx.toISOString().split('T')[0];
+  }
+}
 
 function compress(file, cb) {
   var r = new FileReader();
@@ -276,11 +359,28 @@ document.getElementById('inp-et').onchange = function() { handlePhoto(this, 'et'
 document.getElementById('cam-ct').onchange = function() { handlePhoto(this, 'ct'); };
 document.getElementById('inp-ct').onchange = function() { handlePhoto(this, 'ct'); };
 
-function setSt(t, h) {
-  var el = document.getElementById('ai-st');
+function setSt(t, h, id) {
+  var el = document.getElementById(id || 'ai-st');
   el.className = 'stbox ' + (t || '');
   el.innerHTML = h;
   el.style.display = t ? '' : 'none';
+}
+
+function norm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+// Escolhe a opção cujo texto bate exatamente; senão a que contém todas as palavras do valor lido.
+function matchTipo(v) {
+  var sel = document.getElementById('f-tipo'), n = norm(v);
+  if (!n) return;
+  var opts = Array.prototype.slice.call(sel.options);
+  var hit = opts.filter(function(o) { return norm(o.text) === n; })[0] ||
+    opts.filter(function(o) {
+      var t = norm(o.text);
+      return n.split(/\s+/).every(function(w) { return t.indexOf(w) >= 0; });
+    })[0];
+  if (hit) sel.value = hit.text;
 }
 
 document.getElementById('btn-ai').onclick = function() {
@@ -289,54 +389,39 @@ document.getElementById('btn-ai').onclick = function() {
   document.getElementById('btn-ai').disabled = true;
   document.getElementById('etags').style.display = 'none';
 
-  var prompt = 'Você é especialista em içamento. Analise a etiqueta e retorne SOMENTE JSON válido sem markdown:\n{"tipo":"Cinta têxtil plana, Cinta têxtil redonda, Manilha, Cabo de aço ou Corrente","serie":"nº série","fabricante":"fabricante","op":"OP ou lote","largura":"largura ou diâmetro","comprimento":"comprimento","dt_fabricacao":"data fab","norma":"norma e material","wll_vertical":"WLL vertical kg","wll_forca":"WLL força/choker kg","wll_cesto":"WLL cesto/berço kg","id_inspecao":"código inspeção","empresa_inspecao":"empresa inspeção"}\nCampos não visíveis retornar string vazia. Cintas têm tabela WLL com ícones vertical/força/cesto.';
-
-  var body = {
-    contents: [{
-      parts: [
-        { inline_data: { mime_type: photos.et.mimeType, data: photos.et.base64 } },
-        { text: prompt }
-      ]
-    }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 800 }
-  };
-
   fetch('/api/analyze', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ image: photos.et.base64, mimeType: photos.et.mimeType })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    var txt = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : '';
-    if (!txt) throw new Error('Resposta vazia da IA');
-    var p = JSON.parse(txt.replace(/```json|```/g, '').trim());
-    var sel = document.getElementById('f-tipo');
-    if (p.tipo) {
-      for (var i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].text.toLowerCase().indexOf(p.tipo.toLowerCase().split(' ')[0]) >= 0) {
-          sel.value = sel.options[i].text; break;
-        }
-      }
-    }
+    if (data.error) throw new Error(data.error);
+    var p = data.fields;
+    if (!p) throw new Error('Resposta vazia da IA');
+    matchTipo(p.tipo);
+    buildChecklist();
     var mp = [['f-serie',p.serie],['f-fab',p.fabricante],['f-op',p.op],['f-dtf',p.dt_fabricacao],['f-larg',p.largura],['f-comp',p.comprimento],['f-norma',p.norma],['f-wv',p.wll_vertical],['f-wf',p.wll_forca],['f-wc',p.wll_cesto]];
     mp.forEach(function(x) { if (x[1]) { var el = document.getElementById(x[0]); if (el) el.value = x[1]; } });
     var obs = [p.id_inspecao ? 'ID: ' + p.id_inspecao : '', p.empresa_inspecao ? 'Empresa: ' + p.empresa_inspecao : ''].filter(Boolean).join(' | ');
     if (obs) document.getElementById('f-obs').value = obs;
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('f-di').value = today;
-    var nx = new Date(); nx.setFullYear(nx.getFullYear() + 1);
-    document.getElementById('f-dp').value = nx.toISOString().split('T')[0];
+    setDefaultDates();
     var found = [p.tipo, p.fabricante, p.serie, p.wll_vertical ? 'WLL ' + p.wll_vertical + 'kg' : '', p.comprimento, p.norma].filter(Boolean);
-    if (found.length) {
-      document.getElementById('etags').innerHTML = found.map(function(f) { return '<span class="etag">' + f + '</span>'; }).join('');
-      document.getElementById('etags').style.display = 'flex';
-    }
+    var tags = document.getElementById('etags');
+    tags.innerHTML = '';
+    found.forEach(function(f) {
+      var s = document.createElement('span');
+      s.className = 'etag';
+      s.textContent = f;
+      tags.appendChild(s);
+    });
+    if (found.length) tags.style.display = 'flex';
     setSt('ok', '✅ Etiqueta lida! Revise os dados.');
     setTimeout(function() { goTo(2); }, 1400);
   })
   .catch(function(e) {
-    setSt('er', '❌ Erro: ' + e.message);
+    setSt('er', '');
+    document.getElementById('ai-st').textContent = '❌ Erro: ' + e.message;
   })
   .finally(function() {
     document.getElementById('btn-ai').disabled = false;
@@ -350,6 +435,7 @@ function goTo(n) {
     if (i < n - 1) s.classList.add('dn');
     if (i === n - 1) s.classList.add('on');
   });
+  if (n === 2) setDefaultDates();
   window.scrollTo(0, 0);
 }
 
@@ -359,26 +445,77 @@ function fd(v) {
   return v;
 }
 
+function validate(chk, res) {
+  var errs = [];
+  if (!document.getElementById('f-serie').value.trim()) errs.push('Informe o nº de série / ID.');
+  if (!document.getElementById('f-di').value) errs.push('Informe a data da inspeção.');
+  if (!document.getElementById('f-resp').value.trim()) errs.push('Informe o responsável técnico.');
+  if (chk.some(function(c) { return !c.val; })) errs.push('Responda todos os itens do checklist.');
+  if (!res) errs.push('Selecione o resultado da inspeção.');
+  if (res === 'ok' && chk.some(function(c) { return c.val === 'nok'; })) {
+    errs.push('Há itens NOK no checklist: o resultado não pode ser "Aprovado para uso".');
+  }
+  if (res !== 'bad' && !document.getElementById('f-dp').value) errs.push('Informe a data da próxima inspeção.');
+  return errs;
+}
+
+var RESULT = {
+  ok: '✔ APROVADO PARA USO',
+  warn: '⚠ APROVADO COM RESTRIÇÕES — VER OBSERVAÇÕES',
+  bad: '✖ REPROVADO — RETIRAR DE USO'
+};
+
 function genCert() {
-  var n = String(certN).padStart(4, '0');
-  document.getElementById('c-num').textContent = 'N° CRT-' + n;
+  var chk = checklistValues();
+  var res = document.getElementById('f-res').value;
+  var errs = validate(chk, res);
+  if (errs.length) {
+    setSt('er', '', 'val-st');
+    document.getElementById('val-st').textContent = errs.join(' ');
+    return;
+  }
+  setSt('', '', 'val-st');
+
+  if (curNum === null) {
+    curNum = certN;
+    certN++;
+    localStorage.setItem('crt', certN);
+  }
+  document.getElementById('c-num').textContent = 'N° CRT-' + String(curNum).padStart(4, '0');
   document.getElementById('c-dt').textContent = 'Emitido: ' + new Date().toLocaleDateString('pt-BR');
   var mp = [['c-tipo','f-tipo'],['c-serie','f-serie'],['c-fab','f-fab'],['c-op','f-op'],['c-larg','f-larg'],['c-comp','f-comp'],['c-dtf','f-dtf'],['c-norma','f-norma'],['c-wv','f-wv'],['c-wf','f-wf'],['c-wc','f-wc'],['c-obs','f-obs']];
   mp.forEach(function(x) { document.getElementById(x[0]).textContent = document.getElementById(x[1]).value || '—'; });
   document.getElementById('c-di').textContent = fd(document.getElementById('f-di').value);
-  document.getElementById('c-dp').textContent = fd(document.getElementById('f-dp').value);
-  document.getElementById('c-valid').textContent = fd(document.getElementById('f-dp').value);
-  document.getElementById('c-resp').textContent = document.getElementById('f-resp').value || 'Responsável técnico';
+  document.getElementById('c-dp').textContent = res === 'bad' ? '—' : fd(document.getElementById('f-dp').value);
+  document.getElementById('c-valid').textContent = res === 'bad' ? 'NÃO VÁLIDO' : fd(document.getElementById('f-dp').value);
+  document.getElementById('c-resp').textContent = document.getElementById('f-resp').value;
   document.getElementById('c-reg').textContent = document.getElementById('f-reg').value || '';
+
+  var tbl = document.getElementById('c-chk');
+  tbl.innerHTML = '<tr class="csec"><td colspan="2">Checklist de inspeção</td></tr>';
+  var LBL = { ok: 'OK', nok: 'NOK', na: 'N/A' };
+  chk.forEach(function(c) {
+    var tr = document.createElement('tr');
+    var a = document.createElement('td'), b = document.createElement('td');
+    a.textContent = c.item;
+    b.textContent = LBL[c.val];
+    if (c.val === 'nok') b.className = 'c-nok';
+    tr.appendChild(a); tr.appendChild(b);
+    tbl.appendChild(tr);
+  });
+
+  var rb = document.getElementById('c-res');
+  rb.className = 'c-ok' + (res === 'ok' ? '' : ' ' + res);
+  rb.textContent = RESULT[res];
+
   if (photos.et) { document.getElementById('c-fet').src = photos.et.dataUrl; document.getElementById('c-fet').style.display = 'block'; document.getElementById('c-fet-no').style.display = 'none'; }
   if (photos.ct) { document.getElementById('c-fct').src = photos.ct.dataUrl; document.getElementById('c-fct').style.display = 'block'; document.getElementById('c-fct-no').style.display = 'none'; }
-  certN++;
-  localStorage.setItem('crt', certN);
   goTo(3);
 }
 
 function newCert() {
   photos = { et: null, ct: null };
+  curNum = null;
   ['et', 'ct'].forEach(function(t) {
     document.getElementById('img-' + t).src = '';
     document.getElementById('slot-' + t).classList.remove('ok');
@@ -389,14 +526,19 @@ function newCert() {
   document.getElementById('btn-ai').style.display = 'none';
   document.getElementById('etags').style.display = 'none';
   setSt('', '');
+  setSt('', '', 'val-st');
   ['f-serie','f-fab','f-op','f-dtf','f-larg','f-comp','f-norma','f-wv','f-wf','f-wc','f-di','f-dp','f-resp','f-reg','f-obs'].forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('f-tipo').selectedIndex = 0;
+  document.getElementById('f-res').value = '';
+  buildChecklist();
   document.getElementById('c-fet').style.display = 'none';
   document.getElementById('c-fct').style.display = 'none';
   document.getElementById('c-fet-no').style.display = 'flex';
   document.getElementById('c-fct-no').style.display = 'flex';
   goTo(1);
 }
+
+buildChecklist();
 </script>
 </body>
 </html>
