@@ -997,6 +997,23 @@ function numberPages(doc, label) {
     doc.text(pdfTxt(label).slice(0, 90), 12, 288); doc.text(`Página ${i} de ${n}`, 198, 288, { align: 'right' });
   }
 }
+/* fotos no PDF: o quadro do certificado tem ~9 cm, então 800 px já imprimem com ~210 dpi.
+   Reduzir só na hora do PDF deixa o arquivo ~3x menor e gasta menos memória; a foto guardada no celular não muda. */
+function fotoPdf(src, max = 800, q = 0.6) {
+  if (!src) return Promise.resolve(null);
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      const out = c.toDataURL('image/jpeg', q); c.width = c.height = 0;
+      res(out.length < src.length ? out : src);
+    };
+    img.onerror = () => res(src); img.src = src;
+  });
+}
+const fotosPdf = fotos => Promise.all((fotos || []).map(f => fotoPdf(f)));
 function newDoc() {
   if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('Gerador de PDF não carregou');
   return new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
@@ -1064,7 +1081,7 @@ async function pdfGeral(inspId, lote, filtro) {
     if (p === 0) { summaryPages(doc, insp, itens, fx ? 'RELATÓRIO DE INSPEÇÃO - ' + fx.titulo : undefined); first = false; }
     for (const it of partes[p]) {
       if (!first) doc.addPage(); first = false;
-      certPage(doc, insp, it, await DB.fotosDe(it.id));
+      certPage(doc, insp, it, await fotosPdf(await DB.fotosDe(it.id)));
       if (++feitos % 10 === 0) { toast(`Montando certificados ${feitos} de ${itens.length}`, 1500); await new Promise(r => setTimeout(r, 0)); }
     }
     const sfx = partes.length > 1 ? `_parte${p + 1}de${partes.length}` : '';
@@ -1076,7 +1093,7 @@ async function pdfGeral(inspId, lote, filtro) {
   }
 }
 async function pdfItem(insp, it, fotos) {
-  const doc = newDoc(); certPage(doc, insp, it, fotos); numberPages(doc, insp.titulo);
+  const doc = newDoc(); certPage(doc, insp, it, await fotosPdf(fotos)); numberPages(doc, insp.titulo);
   await entregar('O certificado está pronto', `Certificado_${slug(it.plaqueta || 'sem_plaqueta')}_${slug(it.descricao)}.pdf`, doc.output('blob'), 0);
 }
 async function working(label, fn) {
@@ -1413,9 +1430,12 @@ async function vDetail(v, app) {
       { label: 'Cancelar', value: null, cls: 'ghost' }]);
     if (!filtro) return;
     const qtd = filtro === 'T' ? itens.length : n[filtro];
-    if (qtd > 60) {
-      lote = await choose(`São ${qtd} acessórios. No celular, gerar em partes de 50 certificados evita travar por falta de memória. O resumo geral vai na parte 1.`,
-        [{ label: `Gerar em ${Math.ceil(qtd / 50)} partes (recomendado)`, value: 50 }, { label: 'Arquivo único', value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
+    // com as fotos reduzidas o PDF fica com ~0,09 MB por acessório (190 itens ≈ 17 MB, cabe no e-mail)
+    const mb = n => Math.max(1, Math.round(n * 0.09));
+    if (qtd > 200) {
+      const np = Math.ceil(qtd / 100);
+      lote = await choose(`São ${qtd} acessórios: um arquivo único fica com cerca de ${mb(qtd)} MB e pode travar celulares mais simples. Em ${np} partes, cada uma fica com cerca de ${mb(qtd / np)} MB. O resumo geral vai na parte 1.`,
+        [{ label: `Gerar em ${np} partes (recomendado)`, value: 100 }, { label: `Arquivo único (~${mb(qtd)} MB)`, value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
       if (lote == null) return; if (lote < 0) lote = 0;
     }
     busy(btn, 'Gerando…', () => pdfGeral(insp.id, lote, filtro === 'T' ? null : filtro));
