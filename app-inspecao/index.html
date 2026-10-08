@@ -595,6 +595,7 @@ const slug = s => String(s || 'arquivo').normalize('NFD').replace(/[\u0300-\u036
 
 /* ---------- Dados fixos ---------- */
 const CFG_DEFAULT = {
+  fotoPdf: 'original',
   empresa: 'Unilink Transportes Integrados LTDA',
   filial: 'Porto do Pecém',
   email: 'Ademar.almeida@unilinktrasnportes.com.br',
@@ -997,8 +998,8 @@ function numberPages(doc, label) {
     doc.text(pdfTxt(label).slice(0, 90), 12, 288); doc.text(`Página ${i} de ${n}`, 198, 288, { align: 'right' });
   }
 }
-/* fotos no PDF: o quadro do certificado tem ~9 cm, então 800 px já imprimem com ~210 dpi.
-   Reduzir só na hora do PDF deixa o arquivo ~3x menor e gasta menos memória; a foto guardada no celular não muda. */
+/* fotos no PDF: "original" usa a foto como foi guardada (melhor para ler rastreabilidade);
+   "compacta" reduz para 800 px só na hora do PDF (arquivo ~3x menor); a foto guardada no celular não muda. */
 function fotoPdf(src, max = 800, q = 0.6) {
   if (!src) return Promise.resolve(null);
   return new Promise(res => {
@@ -1013,7 +1014,8 @@ function fotoPdf(src, max = 800, q = 0.6) {
     img.onerror = () => res(src); img.src = src;
   });
 }
-const fotosPdf = fotos => Promise.all((fotos || []).map(f => fotoPdf(f)));
+const fotosPdf = fotos => CFG.fotoPdf === 'compacta' ? Promise.all((fotos || []).map(f => fotoPdf(f))) : Promise.resolve(fotos);
+const MB_POR_ITEM = () => CFG.fotoPdf === 'compacta' ? 0.09 : 0.28; // medido: 190 itens = 16,5 MB (compacta) / 53 MB (original)
 function newDoc() {
   if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('Gerador de PDF não carregou');
   return new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
@@ -1430,12 +1432,14 @@ async function vDetail(v, app) {
       { label: 'Cancelar', value: null, cls: 'ghost' }]);
     if (!filtro) return;
     const qtd = filtro === 'T' ? itens.length : n[filtro];
-    // com as fotos reduzidas o PDF fica com ~0,09 MB por acessório (190 itens ≈ 17 MB, cabe no e-mail)
-    const mb = n => Math.max(1, Math.round(n * 0.09));
-    if (qtd > 200) {
-      const np = Math.ceil(qtd / 100);
-      lote = await choose(`São ${qtd} acessórios: um arquivo único fica com cerca de ${mb(qtd)} MB e pode travar celulares mais simples. Em ${np} partes, cada uma fica com cerca de ${mb(qtd / np)} MB. O resumo geral vai na parte 1.`,
-        [{ label: `Gerar em ${np} partes (recomendado)`, value: 100 }, { label: `Arquivo único (~${mb(qtd)} MB)`, value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
+    // divide quando o arquivo único passaria de ~25 MB (limite do Gmail); cada parte fica com ~18 MB
+    const mb = n => Math.max(1, Math.round(n * MB_POR_ITEM()));
+    const porParte = Math.max(50, Math.floor(18 / MB_POR_ITEM()));
+    if (mb(qtd) > 25) {
+      const np = Math.ceil(qtd / porParte);
+      lote = await choose(`São ${qtd} acessórios: um arquivo único fica com cerca de ${mb(qtd)} MB (não vai por e-mail e pode travar celulares mais simples). Em ${np} partes, cada uma fica com cerca de ${mb(qtd / np)} MB. O resumo geral vai na parte 1.`
+        + (CFG.fotoPdf === 'compacta' ? '' : '\n\nPara um arquivo menor, use "Fotos no PDF: Compacta" em Ajustes (as fotos perdem nitidez).'),
+        [{ label: `Gerar em ${np} partes (recomendado)`, value: porParte }, { label: `Arquivo único (~${mb(qtd)} MB)`, value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
       if (lote == null) return; if (lote < 0) lote = 0;
     }
     busy(btn, 'Gerando…', () => pdfGeral(insp.id, lote, filtro === 'T' ? null : filtro));
@@ -1692,6 +1696,13 @@ async function vCfg(v, app) {
       <input type="file" accept="image/*" id="logoFile" hidden>
       <div class="grid2">${field('Código', 'formCodigo', CFG.formCodigo)}${field('Revisão', 'formRevisao', CFG.formRevisao)}</div>
       ${field('Data do formulário', 'formData', CFG.formData)}
+    </section>
+    <section class="block"><h2>Fotos no PDF</h2>
+      <label class="field"><span>Qualidade das fotos nos certificados</span><select data-f="fotoPdf">
+        <option value="original"${CFG.fotoPdf === 'compacta' ? '' : ' selected'}>Original: máxima nitidez (recomendado)</option>
+        <option value="compacta"${CFG.fotoPdf === 'compacta' ? ' selected' : ''}>Compacta: arquivo ~3x menor, menos nítida</option>
+      </select></label>
+      <p class="hint">Original deixa ler rastreabilidade e etiquetas nas fotos. Com ela, cerca de 90 acessórios cabem num PDF de 25 MB (limite do e-mail); acima disso o app oferece dividir em partes.</p>
     </section>
     <section class="block"><h2>Leitura de etiqueta (IA)</h2>
       ${field('Endereço do serviço de IA', 'iaUrl', CFG.iaUrl || '', 'type="url" inputmode="url" placeholder="https://inspecao-ia.SEU-NOME.workers.dev"')}
