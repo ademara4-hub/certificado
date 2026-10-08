@@ -712,6 +712,14 @@ async function loadCfg() { CFG = Object.assign({}, CFG_DEFAULT, (await DB.get('c
 const safeImg = s => typeof s === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) ? s : '';
 const clearDraft = () => DB.del('config', 'draft').catch(() => {});
 async function itensOrdenados(inspId) { return (await DB.byInsp(inspId)).sort((a, b) => a.ordem - b.ordem); }
+/* ordem dos relatórios: Conforme, Manutenção, Descarte; dentro de cada um pela plaqueta (A0009 antes de A0010; sem plaqueta no fim) */
+const PRIORIDADE = { C: 0, M: 1, D: 2 };
+const ordemPdf = itens => itens.slice().sort((a, b) => {
+  const pa = up(a.plaqueta || '').replace(/^-$/, ''), pb = up(b.plaqueta || '').replace(/^-$/, '');
+  return (PRIORIDADE[a.resultado] ?? 0) - (PRIORIDADE[b.resultado] ?? 0)
+    || (!pa - !pb) || pa.localeCompare(pb, 'pt-BR', { numeric: true }) || a.ordem - b.ordem;
+});
+const FILTRO_PDF = { C: { titulo: 'ITENS CONFORMES', arq: '_conformes' }, M: { titulo: 'ITENS EM MANUTENÇÃO', arq: '_manutencao' }, D: { titulo: 'ITENS DESCARTADOS', arq: '_descartados' } };
 async function recount(inspId) {
   const insp = await DB.get('inspecoes', inspId); if (!insp) return;
   const it = await DB.byInsp(inspId);
@@ -953,9 +961,9 @@ function certPage(doc, insp, it, fotos) {
   doc.setDrawColor(20, 20, 20); doc.setLineWidth(0.6); doc.rect(x, y0, 186, 258 - y0);
   pdfFooter(doc);
 }
-function summaryPages(doc, insp, itens) {
+function summaryPages(doc, insp, itens, titulo = 'RELATÓRIO GERAL DE INSPEÇÃO') {
   const x = 12, L = { fill: LBL, bold: true, size: 8.5 };
-  pdfHeader(doc, 'RELATÓRIO GERAL DE INSPEÇÃO');
+  pdfHeader(doc, titulo);
   let y = 38;
   cell(doc, x, y, 38, 7, 'Inspeção', L); cell(doc, x + 38, y, 148, 7, insp.titulo, { bold: true }); y += 7;
   cell(doc, x, y, 38, 7, 'Empresa', L); cell(doc, x + 38, y, 78, 7, insp.empresa); cell(doc, x + 116, y, 30, 7, 'Filial', L); cell(doc, x + 146, y, 40, 7, insp.filial); y += 7;
@@ -972,7 +980,7 @@ function summaryPages(doc, insp, itens) {
   const head = () => { let xx = x; cols.forEach(([t, w]) => { cell(doc, xx, y, w, 7, t, { fill: LBL, bold: true, size: 8 }); xx += w; }); y += 7; };
   head();
   itens.forEach((it, i) => {
-    if (y + 7 > 258) { pdfFooter(doc); doc.addPage(); pdfHeader(doc, 'RELATÓRIO GERAL DE INSPEÇÃO'); y = 38; head(); }
+    if (y + 7 > 258) { pdfFooter(doc); doc.addPage(); pdfHeader(doc, titulo); y = 38; head(); }
     const rc = RES[it.resultado] || RES.C;
     const v = [String(i + 1), up(it.plaqueta) || '-', up(it.descricao), up(it.fabricante) || '-', up(it.cmt) || '-', rc.t, validadeItem(insp, it)];
     let xx = x;
@@ -1041,9 +1049,11 @@ async function csvInspecao(inspId) {
   const txt = '\uFEFFsep=;\r\n' + linhas.map(l => l.map(q).join(';')).join('\r\n');
   return { nome: `Planilha_${slug(insp.titulo)}_${insp.dataInicio}.csv`, blob: new Blob([txt], { type: 'text/csv' }) };
 }
-async function pdfGeral(inspId, lote) {
+async function pdfGeral(inspId, lote, filtro) {
   let t0 = Date.now();
-  const insp = await DB.get('inspecoes', inspId); const itens = await itensOrdenados(inspId);
+  const insp = await DB.get('inspecoes', inspId);
+  const itens = ordemPdf((await itensOrdenados(inspId)).filter(it => !filtro || it.resultado === filtro));
+  const fx = FILTRO_PDF[filtro];
   if (lote && itens.length > lote) lote = Math.ceil(itens.length / Math.ceil(itens.length / lote)); // partes equilibradas
   const partes = [];
   for (let i = 0; i < itens.length; i += (lote || itens.length || 1)) partes.push(itens.slice(i, i + (lote || itens.length)));
@@ -1051,7 +1061,7 @@ async function pdfGeral(inspId, lote) {
   let feitos = 0;
   for (let p = 0; p < partes.length; p++) {
     let doc = newDoc(), first = true;
-    if (p === 0) { summaryPages(doc, insp, itens); first = false; }
+    if (p === 0) { summaryPages(doc, insp, itens, fx ? 'RELATÓRIO DE INSPEÇÃO - ' + fx.titulo : undefined); first = false; }
     for (const it of partes[p]) {
       if (!first) doc.addPage(); first = false;
       certPage(doc, insp, it, await DB.fotosDe(it.id));
@@ -1060,7 +1070,7 @@ async function pdfGeral(inspId, lote) {
     const sfx = partes.length > 1 ? `_parte${p + 1}de${partes.length}` : '';
     numberPages(doc, insp.titulo + (partes.length > 1 ? ` - parte ${p + 1} de ${partes.length}` : ''));
     const blob = doc.output('blob'); doc = null;
-    const nomePdf = `Inspecao_${slug(insp.titulo)}_${insp.dataInicio}${sfx}.pdf`;
+    const nomePdf = `Inspecao_${slug(insp.titulo)}_${insp.dataInicio}${fx ? fx.arq : ''}${sfx}.pdf`;
     await entregar(partes.length > 1 ? `A parte ${p + 1} de ${partes.length} do PDF está pronta` : 'O PDF está pronto', nomePdf, blob, partes.length > 1 ? 0 : t0);
     t0 = Date.now();
   }
@@ -1394,12 +1404,21 @@ async function vDetail(v, app) {
   $('#add').onclick = () => go('item', { inspId: insp.id });
   if ($('#pdf')) $('#pdf').onclick = async e => {
     const btn = e.currentTarget; let lote = 0;
-    if (itens.length > 60) {
-      lote = await choose(`São ${itens.length} acessórios. No celular, gerar em partes de 50 certificados evita travar por falta de memória. O resumo geral vai na parte 1.`,
-        [{ label: `Gerar em ${Math.ceil(itens.length / 50)} partes (recomendado)`, value: 50 }, { label: 'Arquivo único', value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
+    const n = { C: 0, M: 0, D: 0 }; itens.forEach(it => { if (it.resultado in n) n[it.resultado]++; });
+    const filtro = await choose('Quais itens entram no PDF?\nOrdem: Conformes, Manutenção e Descarte, cada grupo pela plaqueta.', [
+      { label: `Todos (${itens.length})`, value: 'T' },
+      ...(n.C ? [{ label: `Só conformes (${n.C})`, value: 'C', cls: 'ghost' }] : []),
+      ...(n.M ? [{ label: `Só manutenção (${n.M})`, value: 'M', cls: 'ghost' }] : []),
+      ...(n.D ? [{ label: `Só descartados (${n.D})`, value: 'D', cls: 'ghost' }] : []),
+      { label: 'Cancelar', value: null, cls: 'ghost' }]);
+    if (!filtro) return;
+    const qtd = filtro === 'T' ? itens.length : n[filtro];
+    if (qtd > 60) {
+      lote = await choose(`São ${qtd} acessórios. No celular, gerar em partes de 50 certificados evita travar por falta de memória. O resumo geral vai na parte 1.`,
+        [{ label: `Gerar em ${Math.ceil(qtd / 50)} partes (recomendado)`, value: 50 }, { label: 'Arquivo único', value: -1, cls: 'ghost' }, { label: 'Cancelar', value: null, cls: 'ghost' }]);
       if (lote == null) return; if (lote < 0) lote = 0;
     }
-    busy(btn, 'Gerando…', () => pdfGeral(insp.id, lote));
+    busy(btn, 'Gerando…', () => pdfGeral(insp.id, lote, filtro === 'T' ? null : filtro));
   };
   $$('.item[data-id]').forEach(b => b.onclick = () => go('item', { inspId: insp.id, id: b.dataset.id }));
 }

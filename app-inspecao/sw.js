@@ -1,5 +1,5 @@
 /* Mude a versão a cada atualização do app para o celular baixar a nova */
-const VERSAO = 'inspecao-v19';
+const VERSAO = 'inspecao-v20';
 const ARQUIVOS = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 /* o Cloudflare redireciona /index.html -> / ; resposta "redirecionada" não pode ser
