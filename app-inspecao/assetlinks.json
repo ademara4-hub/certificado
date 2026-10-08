@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.pages.inspecao_ademar.twa",
+      "sha256_cert_fingerprints": [
+        "93:E0:5F:DD:EA:56:94:65:73:B3:40:38:C8:2A:73:88:89:7E:5E:E3:DE:E9:88:A1:E8:25:45:67:F1:A0:FB:7C",
+        "7D:D8:C4:6D:6F:0D:3B:C9:1B:92:57:D8:AF:88:4D:DA:A4:48:9D:45:05:9B:47:EC:0E:71:C4:FD:F8:CF:EB:EF"
+      ]
+    }
+  }
+]

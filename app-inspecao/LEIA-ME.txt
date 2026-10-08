@@ -1,0 +1,28 @@
+APP DE INSPEÇÃO - PUBLICAR NO CLOUDFLARE PAGES E INSTALAR NO CELULAR
+
+O Cloudflare só hospeda o "programa". As inspeções e fotos ficam SÓ no celular.
+
+1) PUBLICAR (uma vez só, dá pra fazer pelo celular ou PC)
+   - dash.cloudflare.com (crie a conta grátis se não tiver)
+   - Workers & Pages > Create > aba Pages > "Upload assets" / "Drag and drop"
+   - Nome do projeto: ex. inspecao-ademar  > Create project
+   - Envie este .zip inteiro (não precisa descompactar) > Deploy site
+   - O link fica: https://inspecao-ademar.pages.dev
+
+2) INSTALAR NO CELULAR
+   - Abra o link no Chrome do celular
+   - Toque em "Instalar como app no celular" (ou menu ⋮ > Instalar app)
+   - Pronto: ícone na tela inicial, abre e funciona sem internet.
+
+3) ATUALIZAR (quando receber versão nova)
+   - Cloudflare > Workers & Pages > seu projeto > Create deployment
+     (ou "Create new deployment") > envie o .zip novo > Deploy
+   - No celular, abra o app uma vez com internet; na próxima abertura já está
+     atualizado. As inspeções NÃO são apagadas (mesmo link = mesmos dados).
+   - Não mude o nome do projeto: link diferente = app diferente, sem os dados.
+
+IMPORTANTE
+   - PDFs, planilhas e backups vão para a pasta Download do celular.
+   - Antes de desinstalar o app ou limpar dados do Chrome: Ajustes > Exportar backup.
+   - Para trazer o que já cadastrou no link do Claude: Exportar backup lá e
+     Importar backup no app instalado.
